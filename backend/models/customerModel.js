@@ -25,9 +25,8 @@ const customerSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    profileImage: {
+    image: {
       type: String,
-      default: "",
     },
   },
   { timestamps: true }
