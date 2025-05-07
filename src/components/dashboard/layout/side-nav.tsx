@@ -51,9 +51,6 @@ export function SideNav(): React.JSX.Element {
       }}
     >
       <Stack spacing={2} sx={{ p: 3 }}>
-        <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
-          <Logo color="light" height={42} width={132} />
-        </Box>
         <Box
           sx={{
             alignItems: 'center',
@@ -70,7 +67,7 @@ export function SideNav(): React.JSX.Element {
               Workspace
             </Typography>
             <Typography color="inherit" variant="subtitle1">
-              Devias
+              MultiMart
             </Typography>
           </Box>
           <CaretUpDownIcon />

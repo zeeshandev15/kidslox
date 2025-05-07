@@ -16,19 +16,13 @@ import TableRow from '@mui/material/TableRow';
 import { ArrowRight as ArrowRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowRight';
 import dayjs from 'dayjs';
 
+import { Order } from '../overview/latest-orders';
+
 const statusMap = {
   pending: { label: 'Pending', color: 'warning' },
   delivered: { label: 'Delivered', color: 'success' },
   refunded: { label: 'Refunded', color: 'error' },
 } as const;
-
-export interface Order {
-  id: string;
-  customer: { name: string };
-  amount: number;
-  status: 'pending' | 'delivered' | 'refunded';
-  createdAt: Date;
-}
 
 export interface LatestOrdersProps {
   orders?: Order[];
@@ -53,14 +47,14 @@ export function Orders({ orders = [], sx, title, autoset }: LatestOrdersProps): 
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((order) => {
+            {orders.map((order, i) => {
               const { label, color } = statusMap[order.status] ?? { label: 'Unknown', color: 'default' };
 
               return (
-                <TableRow hover key={order.id}>
-                  <TableCell>{order.id}</TableCell>
-                  <TableCell>{order.customer.name}</TableCell>
-                  <TableCell>{dayjs(order.createdAt).format('MMM D, YYYY')}</TableCell>
+                <TableRow hover key={i}>
+                  <TableCell>ORD 00{1 + i}</TableCell>
+                  <TableCell>{`${order.shippingForm.firstName} ${order.shippingForm.lastName}`}</TableCell>
+                  <TableCell>{dayjs(order.shippingForm.date).format('MMM D, YYYY')}</TableCell>
                   <TableCell>
                     <Chip color={color} label={label} size="small" />
                   </TableCell>

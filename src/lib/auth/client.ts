@@ -1,6 +1,6 @@
 'use client';
 
-import type { User } from '@/types/user';
+import { User } from '../../types/user';
 
 function generateToken(): string {
   const arr = new Uint8Array(12);
@@ -10,7 +10,7 @@ function generateToken(): string {
 
 const user = {
   id: 'USR-000',
-  avatar: '/assets/avatar.png',
+  avatar: '',
   firstName: 'Sofia',
   lastName: 'Rivers',
   email: 'sofia@devias.io',

@@ -11,15 +11,20 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
 import { z as zod } from 'zod';
 
-import { authClient } from '@/lib/auth/client';
+import { ResetPassword } from './reset-passoword';
 
-const schema = zod.object({ email: zod.string().min(1, { message: 'Email is required' }).email() });
+const schema = zod.object({
+  email: zod.string().min(1, { message: 'Email is required' }).email(),
+});
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: '' } satisfies Values;
+const defaultValues: Values = {
+  email: '',
+};
 
 export function ResetPasswordForm(): React.JSX.Element {
   const [isPending, setIsPending] = React.useState<boolean>(false);
@@ -27,34 +32,45 @@ export function ResetPasswordForm(): React.JSX.Element {
   const {
     control,
     handleSubmit,
-    setError,
     formState: { errors },
-  } = useForm<Values>({ defaultValues, resolver: zodResolver(schema) });
+    reset,
+  } = useForm<Values>({
+    defaultValues,
+    resolver: zodResolver(schema),
+  });
 
   const onSubmit = React.useCallback(
     async (values: Values): Promise<void> => {
-      setIsPending(true);
+      try {
+        const response = await fetch(`http://localhost:8000/api/auth/password/forgot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values),
+        });
 
-      const { error } = await authClient.resetPassword(values);
-
-      if (error) {
-        setError('root', { type: 'server', message: error });
-        setIsPending(false);
-        return;
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(`${result.message} || Something went wrong`);
+        }
+        toast.success(`${result.message}`);
+        reset();
+        setIsPending(true);
+      } catch (error: unknown) {
+        console.error('Error during reset password:', error);
+        toast.error('Something went wrong. Try again.');
       }
-
-      setIsPending(false);
-
-      // Redirect to confirm password reset
     },
-    [setError]
+    [reset]
   );
 
   return (
     <Stack spacing={4}>
-      <Typography variant="h5">Reset password</Typography>
+      <Typography variant="h5">Reset Password</Typography>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
+          {/* Email Field */}
           <Controller
             control={control}
             name="email"
@@ -62,16 +78,26 @@ export function ResetPasswordForm(): React.JSX.Element {
               <FormControl error={Boolean(errors.email)}>
                 <InputLabel>Email address</InputLabel>
                 <OutlinedInput {...field} label="Email address" type="email" />
-                {errors.email ? <FormHelperText>{errors.email.message}</FormHelperText> : null}
+                {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
               </FormControl>
             )}
           />
-          {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
-          <Button disabled={isPending} type="submit" variant="contained">
-            Send recovery link
+
+          {errors.root && <Alert severity="error">{errors.root.message}</Alert>}
+
+          <Button variant="contained" type="submit" disabled={isPending}>
+            {isPending ? (
+              <>
+                <span className="loader" /> Sending...
+              </>
+            ) : (
+              'Reset Password'
+            )}
           </Button>
         </Stack>
       </form>
+
+      {isPending && <ResetPassword />}
     </Stack>
   );
 }

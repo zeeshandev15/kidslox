@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import Link from 'next/link';
 import Box from '@mui/material/Box';
@@ -23,21 +25,36 @@ const statusMap = {
 } as const;
 
 export interface Order {
-  id: string;
-  customer: { name: string };
-  amount: number;
+  shippingForm: { firstName: string; lastName: string; date: Date };
   status: 'pending' | 'delivered' | 'refunded';
-  createdAt: Date;
 }
 
 export interface LatestOrdersProps {
-  orders?: Order[];
   sx?: SxProps;
   title?: string;
   autoset?: SxProps;
 }
 
-export function LatestOrders({ orders = [], sx, title, autoset }: LatestOrdersProps): React.JSX.Element {
+export function LatestOrders({ sx, title, autoset }: LatestOrdersProps): React.JSX.Element {
+  const [orderdata, setOrderdata] = React.useState<Order[]>();
+
+  React.useEffect(() => {
+    const submitOrder = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/checkout');
+        const data = await res.json();
+
+        let updatedata = [...data.orders];
+        updatedata[0].status = 'delivered';
+
+        setOrderdata(updatedata);
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    };
+
+    submitOrder();
+  }, []);
   return (
     <Card sx={sx}>
       <CardHeader title="Latest orders" />
@@ -53,14 +70,14 @@ export function LatestOrders({ orders = [], sx, title, autoset }: LatestOrdersPr
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.map((order) => {
+            {orderdata?.map((order, i) => {
               const { label, color } = statusMap[order.status] ?? { label: 'Unknown', color: 'default' };
 
               return (
-                <TableRow hover key={order.id}>
-                  <TableCell>{order.id}</TableCell>
-                  <TableCell>{order.customer.name}</TableCell>
-                  <TableCell>{dayjs(order.createdAt).format('MMM D, YYYY')}</TableCell>
+                <TableRow hover key={i}>
+                  <TableCell>ORD-00{1 + i}</TableCell>
+                  <TableCell>{`${order.shippingForm.firstName} ${order.shippingForm.lastName}`}</TableCell>
+                  <TableCell>{dayjs(order.shippingForm.date).format('MMM D, YYYY')}</TableCell>
                   <TableCell>
                     <Chip color={color} label={label} size="small" />
                   </TableCell>

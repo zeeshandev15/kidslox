@@ -3,6 +3,9 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
+import { loginUser } from '@/redux/api/authApi';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { RootState } from '@/redux/rootReducer';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -16,58 +19,55 @@ import Typography from '@mui/material/Typography';
 import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
 import { EyeSlash as EyeSlashIcon } from '@phosphor-icons/react/dist/ssr/EyeSlash';
 import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
 import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
-import { authClient } from '@/lib/auth/client';
-import { useUser } from '@/hooks/use-user';
 
 const schema = zod.object({
   email: zod.string().min(1, { message: 'Email is required' }).email(),
   password: zod.string().min(1, { message: 'Password is required' }),
 });
 
-type Values = zod.infer<typeof schema>;
+export type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: 'sofia@devias.io', password: 'Secret1' } satisfies Values;
+const defaultValues = { email: '', password: '' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();
 
-  const { checkSession } = useUser();
-
   const [showPassword, setShowPassword] = React.useState<boolean>();
 
   const [isPending, setIsPending] = React.useState<boolean>(false);
-
+  const { loading, currentUser, error } = useAppSelector((state: RootState) => state.auth);
+  console.log('🚀 ~ SignInForm ~ auth:', currentUser);
+  const dispatch = useAppDispatch();
   const {
     control,
     handleSubmit,
-    setError,
     formState: { errors },
+    reset,
   } = useForm<Values>({ defaultValues, resolver: zodResolver(schema) });
 
   const onSubmit = React.useCallback(
     async (values: Values): Promise<void> => {
-      setIsPending(true);
-
-      const { error } = await authClient.signInWithPassword(values);
-
-      if (error) {
-        setError('root', { type: 'server', message: error });
-        setIsPending(false);
-        return;
+      try {
+        await dispatch(loginUser(values));
+        reset();
+        if (currentUser?.email === values.email) {
+          router.push(paths.dashboard.overview);
+        } else {
+          router.push(paths.auth.signIn);
+        }
+      } catch (error: any) {
+        console.error('Error during sign In:', error);
+        toast.error(error.message || 'Something went wrong. Try again.');
       }
-
-      // Refresh the auth state
-      await checkSession?.();
-
-      // UserProvider, for this case, will not refresh the router
-      // After refresh, GuestGuard will handle the redirect
-      router.refresh();
     },
-    [checkSession, router, setError]
+    [dispatch, reset, router]
   );
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <Stack spacing={4}>
@@ -127,6 +127,8 @@ export function SignInForm(): React.JSX.Element {
               </FormControl>
             )}
           />
+          {error ? <FormHelperText sx={{ color: '#ff4d4f' }}>{error}</FormHelperText> : null}
+
           <div>
             <Link component={RouterLink} href={paths.auth.resetPassword} variant="subtitle2">
               Forgot password?
@@ -138,16 +140,6 @@ export function SignInForm(): React.JSX.Element {
           </Button>
         </Stack>
       </form>
-      <Alert color="warning">
-        Use{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          sofia@devias.io
-        </Typography>{' '}
-        with password{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          Secret1
-        </Typography>
-      </Alert>
     </Stack>
   );
 }

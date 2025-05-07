@@ -1,178 +1,206 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import dayjs from 'dayjs';
 
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-import Link from 'next/link';
-import { Button, Stack, Typography } from '@mui/material';
+import { deleteCustomer, fetchCustomers } from '@/redux/api/customersApi';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { Button, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
-import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
-import { AllCommunityModule, ColDef, ModuleRegistry } from 'ag-grid-community';
+import { AllCommunityModule, ColDef, ICellRendererParams, ModuleRegistry } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
+import { toast } from 'react-toastify';
 
-import AddCustomerForm from './add-customers';
+import AddCustomerForm, { Customerform } from './add-customers';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface Customer {
+  _id: string;
   id: string;
   name: string;
-  avatar: string;
+  image: string;
   email: string;
   phone: string;
-  address: {
-    city: string;
-    country: string;
-    state: string;
-    street: string;
-  };
-  createdAt: Date;
+  location: string;
+  joinedDate: string;
 }
 
-const customers: Customer[] = [
-  {
-    id: 'USR-009',
-    name: 'Alcides Antonio',
-    avatar: '/assets/avatar-1.png',
-    email: 'alcides.antonio@devias.io',
-    phone: '908-691-3242',
-    address: {
-      city: 'Madrid',
-      country: 'Spain',
-      state: 'Comunidad de Madrid',
-      street: '4158 Hedge Street',
-    },
-    createdAt: dayjs().subtract(2, 'hours').toDate(),
-  },
-  {
-    id: 'USR-010',
-    name: 'Marcus Finn',
-    avatar: '/assets/avatar-2.png',
-    email: 'marcus.finn@devias.io',
-    phone: '415-907-2647',
-    address: {
-      city: 'Carson City',
-      country: 'USA',
-      state: 'Nevada',
-      street: '2188 Armbrester Drive',
-    },
-    createdAt: dayjs().subtract(2, 'hours').toDate(),
-  },
-  {
-    id: 'USR-011',
-    name: 'Marcus Finn',
-    avatar: '/assets/avatar-3.png',
-    email: 'marcus.finn@devias.io',
-    phone: '415-907-2647',
-    address: {
-      city: 'Carson City',
-      country: 'USA',
-      state: 'Nevada',
-      street: '2188 Armbrester Drive',
-    },
-    createdAt: dayjs().subtract(2, 'hours').toDate(),
-  },
-  {
-    id: 'USR-012',
-    name: 'Marcus Finn',
-    avatar: '/assets/avatar-4.png',
-    email: 'marcus.finn@devias.io',
-    phone: '415-907-2647',
-    address: {
-      city: 'Carson City',
-      country: 'USA',
-      state: 'Nevada',
-      street: '2188 Armbrester Drive',
-    },
-    createdAt: dayjs().subtract(2, 'hours').toDate(),
-  },
-  {
-    id: 'USR-013',
-    name: 'Marcus Finn',
-    avatar: '/assets/avatar-5.png',
-    email: 'marcus.finn@devias.io',
-    phone: '415-907-2647',
-    address: {
-      city: 'Carson City',
-      country: 'USA',
-      state: 'Nevada',
-      street: '2188 Armbrester Drive',
-    },
-    createdAt: dayjs().subtract(2, 'hours').toDate(),
-  },
-  {
-    id: 'USR-013',
-    name: 'Marcus Finn',
-    avatar: '/assets/avatar-6.png',
-    email: 'marcus.finn@devias.io',
-    phone: '415-907-2647',
-    address: {
-      city: 'Carson City',
-      country: 'USA',
-      state: 'Nevada',
-      street: '2188 Armbrester Drive',
-    },
-    createdAt: dayjs().subtract(2, 'hours').toDate(),
-  },
-];
+interface ActionCellRendererParams extends ICellRendererParams {
+  setEditProduct: React.Dispatch<React.SetStateAction<Customerform | null>>;
+  fecthCustomer: () => Promise<void>;
+}
+
+const ActionsCellRenderer: React.FC<ActionCellRendererParams> = (props) => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const dispatch = useAppDispatch();
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEdit = () => {
+    props.setEditProduct(props.data);
+    handleClose();
+  };
+
+  const handleDelete = async () => {
+    const actionResult = await dispatch(deleteCustomer(props.data._id));
+
+    if (deleteCustomer.fulfilled.match(actionResult)) {
+      const delcusotmer = actionResult.payload;
+      console.log('🚀 ~ handleDelete ~ delcusotmer:', delcusotmer);
+      handleClose();
+      props.fecthCustomer();
+
+      toast.success('Customer deleted successfully!');
+    } else {
+      toast.error('Failed to delete Customer');
+    }
+  };
+  return (
+    <>
+      <IconButton onClick={handleClick} size="small">
+        <MoreVertIcon sx={{ color: 'white' }} />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+        PaperProps={{ sx: { backgroundColor: '#1e1e1e', color: 'white' } }}
+      >
+        <MenuItem onClick={handleEdit}>Edit</MenuItem>
+        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+      </Menu>
+    </>
+  );
+};
 
 const CustomerTable = () => {
-  const [rowData, setRowData] = useState<Customer[]>(customers);
+  const [clients, setClients] = useState<Customerform[]>([]);
+  const [editProduct, setEditProduct] = useState<Customerform | null>(null);
+  const { loading, customer } = useAppSelector((state) => state.customers);
+  const dispatch = useAppDispatch();
+  console.log('🚀 ~ CustomerTable ~ customer:', customer.length);
+
+  // const fetchProduct = React.useCallback(async () => {
+  //   try {
+  //     await dispatch(fetchProducts()).unwrap();
+  //   } catch (error) {
+  //     console.error('Error fetching products:', error);
+  //   }
+  // }, [dispatch]);
+
+  // React.useEffect(() => {
+  //   fetchProduct();
+  // }, [fetchProduct]);
+
+  const fecthCustomer = React.useCallback(async (): Promise<void> => {
+    try {
+      const data = await dispatch(fetchCustomers()).unwrap();
+      if (data?.customers) {
+        setClients(
+          data.customers.map((client: any) => ({
+            ...client,
+            id: client._id,
+          }))
+        );
+      } else {
+        toast.error('Failed to fetch clients');
+      }
+    } catch (error) {
+      console.error('Error fetching client:', error);
+    }
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    fecthCustomer();
+  }, [fecthCustomer]);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const columnDefs: ColDef<Customer>[] = [
     {
       headerName: 'ID',
-      field: 'id',
+      field: '_id',
       sortable: true,
+      headerClass: 'smoke-white-header',
+      flex: 4,
     },
     {
       headerName: 'Name',
       field: 'name',
       sortable: true,
-
-      cellRenderer: (params: any) => {
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src={params.data.avatar} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-            <span>{params.value}</span>
-          </div>
-        );
-      },
+      headerClass: 'smoke-white-header',
+      cellRenderer: (params: ICellRendererParams) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img
+            src={params.data.image ? `${API_URL}/uploads/${params.data.image}` : undefined}
+            alt="Image"
+            style={{ width: '40px', height: '40px', borderRadius: '50%' }}
+          />
+          <span>{params.value}</span>
+        </div>
+      ),
+      flex: 4,
     },
     {
       headerName: 'Email',
       field: 'email',
       sortable: true,
+      headerClass: 'smoke-white-header',
+      flex: 4,
     },
     {
       headerName: 'Phone',
       field: 'phone',
       sortable: true,
-
       filter: 'agNumberColumnFilter',
+      headerClass: 'smoke-white-header', // Apply custom class
+      flex: 2,
     },
     {
       headerName: 'Location',
-      field: 'address',
+      field: 'location',
       sortable: true,
-      valueGetter: (params) =>
-        `${params.data?.address.city}, ${params.data?.address.state}, ${params.data?.address.country}`,
+      headerClass: 'smoke-white-header', // Apply custom class
+      flex: 4,
     },
     {
-      headerName: 'Joined',
-      field: 'createdAt',
+      headerName: 'Joined Date',
+      field: 'joinedDate',
       sortable: true,
       valueFormatter: (params) => dayjs(params.value).format('MMM D, YYYY'),
+      headerClass: 'smoke-white-header',
+      flex: 2,
+    },
+    {
+      headerName: '',
+      width: 80,
+      cellRenderer: (params: ICellRendererParams) => (
+        <ActionsCellRenderer {...params} setEditProduct={setEditProduct} fecthCustomer={fecthCustomer} />
+      ),
+      menuTabs: [],
+      sortable: false,
+      headerClass: 'smoke-white-header',
+      flex: 2,
     },
   ];
 
   const getRowHeight = useCallback((params: any) => {
     return params.data?.rowHeight || 70;
   }, []);
+
+  if (loading) return <p>Loading...</p>;
+
   return (
     <>
       <Stack direction="row" spacing={3} sx={{ marginBottom: 4 }}>
@@ -188,14 +216,14 @@ const CustomerTable = () => {
           </Stack>
         </Stack>
         <div>
-          <AddCustomerForm />
+          <AddCustomerForm editProduct={editProduct} setEditProduct={setEditProduct} fecthCustomer={fecthCustomer} />
         </div>
       </Stack>
 
       <div className="p-6 bg-gray-900 text-white rounded-lg shadow-xl">
         <div className="ag-theme-alpine-dark rounded-lg shadow-lg">
           <AgGridReact
-            rowData={rowData}
+            rowData={customer}
             columnDefs={columnDefs}
             defaultColDef={{
               flex: 1,

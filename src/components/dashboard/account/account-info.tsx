@@ -9,12 +9,12 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 const user = {
-  name: 'Sofia Rivers',
-  avatar: '/assets/avatar.png',
+  name: 'RFID NEXUS',
+  avatar: '/assets/logo.png',
   jobTitle: 'Senior Developer',
-  country: 'USA',
-  city: 'Los Angeles',
-  timezone: 'GTM-7',
+  country: 'PAK',
+  city: 'Faisalabad',
+  timezone: 'GTM-2',
 } as const;
 
 export function AccountInfo(): React.JSX.Element {
@@ -23,7 +23,7 @@ export function AccountInfo(): React.JSX.Element {
       <CardContent>
         <Stack spacing={2} sx={{ alignItems: 'center' }}>
           <div>
-            <Avatar src={user.avatar} sx={{ height: '80px', width: '80px' }} />
+            <Avatar src={user.avatar} sx={{ height: '150px', width: '150px' }} />
           </div>
           <Stack spacing={1} sx={{ textAlign: 'center' }}>
             <Typography variant="h5">{user.name}</Typography>
@@ -36,12 +36,6 @@ export function AccountInfo(): React.JSX.Element {
           </Stack>
         </Stack>
       </CardContent>
-      <Divider />
-      <CardActions>
-        <Button fullWidth variant="text">
-          Upload picture
-        </Button>
-      </CardActions>
     </Card>
   );
 }

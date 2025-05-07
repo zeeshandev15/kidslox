@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import RouterLink from 'next/link';
-import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { FormLabel } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
@@ -16,59 +16,73 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
+import PhoneInput from 'react-phone-input-2';
+import { toast } from 'react-toastify';
 import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
-import { authClient } from '@/lib/auth/client';
-import { useUser } from '@/hooks/use-user';
+
+import 'react-phone-input-2/lib/material.css';
+
+import { useRouter } from 'next/navigation';
+import { registerUser } from '@/redux/api/authApi';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 
 const schema = zod.object({
-  firstName: zod.string().min(1, { message: 'First name is required' }),
-  lastName: zod.string().min(1, { message: 'Last name is required' }),
+  name: zod.string().min(1, { message: 'First name is required' }),
   email: zod.string().min(1, { message: 'Email is required' }).email(),
   password: zod.string().min(6, { message: 'Password should be at least 6 characters' }),
-  terms: zod.boolean().refine((value) => value, 'You must accept the terms and conditions'),
+  phone: zod.string().min(6, { message: 'Phone Number is required' }),
+  verificationMethod: zod.boolean().refine((value) => value, 'You must accept the terms and conditions'),
 });
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { firstName: '', lastName: '', email: '', password: '', terms: false } satisfies Values;
+const defaultValues = {
+  name: '',
+  email: '',
+  phone: '',
+  password: '',
+  verificationMethod: false,
+} satisfies Values;
 
 export function SignUpForm(): React.JSX.Element {
-  const router = useRouter();
-
-  const { checkSession } = useUser();
-
-  const [isPending, setIsPending] = React.useState<boolean>(false);
-
   const {
     control,
     handleSubmit,
-    setError,
     formState: { errors },
+    reset,
   } = useForm<Values>({ defaultValues, resolver: zodResolver(schema) });
+  const { loading } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
 
+  const router = useRouter();
   const onSubmit = React.useCallback(
     async (values: Values): Promise<void> => {
-      setIsPending(true);
+      const updatedValues = {
+        ...values,
+        phone: `+${values.phone}`,
+        verificationMethod: values.verificationMethod === true ? 'email' : 'phone',
+      };
 
-      const { error } = await authClient.signUp(values);
-
-      if (error) {
-        setError('root', { type: 'server', message: error });
-        setIsPending(false);
-        return;
+      try {
+        const resultAction = await dispatch(registerUser(updatedValues));
+        if (registerUser.fulfilled.match(resultAction)) {
+          toast.success(resultAction.payload.message);
+          reset();
+          router.push('/auth/otp-verification');
+        } else {
+          toast.error(resultAction.payload as string);
+        }
+      } catch (error: any) {
+        console.error('Error during registration:', error);
+        toast.error(error.message || 'Something went wrong try againe');
       }
-
-      // Refresh the auth state
-      await checkSession?.();
-
-      // UserProvider, for this case, will not refresh the router
-      // After refresh, GuestGuard will handle the redirect
-      router.refresh();
     },
-    [checkSession, router, setError]
+    [dispatch, reset, router]
   );
+
+  if (loading) return <p>loading...</p>;
 
   return (
     <Stack spacing={3}>
@@ -85,26 +99,16 @@ export function SignUpForm(): React.JSX.Element {
         <Stack spacing={2}>
           <Controller
             control={control}
-            name="firstName"
+            name="name"
             render={({ field }) => (
-              <FormControl error={Boolean(errors.firstName)}>
-                <InputLabel>First name</InputLabel>
-                <OutlinedInput {...field} label="First name" />
-                {errors.firstName ? <FormHelperText>{errors.firstName.message}</FormHelperText> : null}
+              <FormControl error={Boolean(errors.name)}>
+                <InputLabel>Enter Name</InputLabel>
+                <OutlinedInput {...field} label="Enter Name" />
+                {errors.name ? <FormHelperText>{errors.name.message}</FormHelperText> : null}
               </FormControl>
             )}
           />
-          <Controller
-            control={control}
-            name="lastName"
-            render={({ field }) => (
-              <FormControl error={Boolean(errors.firstName)}>
-                <InputLabel>Last name</InputLabel>
-                <OutlinedInput {...field} label="Last name" />
-                {errors.firstName ? <FormHelperText>{errors.firstName.message}</FormHelperText> : null}
-              </FormControl>
-            )}
-          />
+
           <Controller
             control={control}
             name="email"
@@ -116,6 +120,26 @@ export function SignUpForm(): React.JSX.Element {
               </FormControl>
             )}
           />
+
+          <Controller
+            name="phone"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <PhoneInput
+                country={'pk'}
+                enableSearch={true}
+                inputStyle={{
+                  width: '100%',
+                  height: '56px',
+                  fontSize: '16px',
+                }}
+                containerStyle={{ width: '100%' }}
+                {...field}
+              />
+            )}
+          />
+
           <Controller
             control={control}
             name="password"
@@ -127,30 +151,43 @@ export function SignUpForm(): React.JSX.Element {
               </FormControl>
             )}
           />
+
+          <FormLabel component="legend">Verification Method</FormLabel>
           <Controller
             control={control}
-            name="terms"
+            name="verificationMethod"
             render={({ field }) => (
               <div>
-                <FormControlLabel
-                  control={<Checkbox {...field} />}
-                  label={
-                    <React.Fragment>
-                      I have read the <Link>terms and conditions</Link>
-                    </React.Fragment>
-                  }
-                />
-                {errors.terms ? <FormHelperText error>{errors.terms.message}</FormHelperText> : null}
+                <FormControlLabel control={<Checkbox {...field} />} label={<React.Fragment>Email</React.Fragment>} />
+                {errors.verificationMethod ? (
+                  <FormHelperText error>{errors.verificationMethod.message}</FormHelperText>
+                ) : null}
               </div>
             )}
           />
           {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
-          <Button disabled={isPending} type="submit" variant="contained">
+
+          <Controller
+            control={control}
+            name="verificationMethod"
+            render={({ field }) => (
+              <div>
+                <FormControlLabel
+                  control={<Checkbox {...field} />}
+                  label={<React.Fragment>Phone Number</React.Fragment>}
+                />
+                {errors.verificationMethod ? (
+                  <FormHelperText error>{errors.verificationMethod.message}</FormHelperText>
+                ) : null}
+              </div>
+            )}
+          />
+          {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
+          <Button type="submit" variant="contained">
             Sign up
           </Button>
         </Stack>
       </form>
-      <Alert color="warning">Created users are not persisted</Alert>
     </Stack>
   );
 }

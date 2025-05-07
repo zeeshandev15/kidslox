@@ -1,4 +1,9 @@
+'use client';
+
 import * as React from 'react';
+import { fetchCustomers } from '@/redux/api/customersApi';
+import { fetchProducts } from '@/redux/api/productApi';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import Avatar from '@mui/material/Avatar';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -13,13 +18,27 @@ export interface TotalCustomersProps {
   diff?: number;
   trend: 'up' | 'down';
   sx?: SxProps;
-  value: string;
 }
 
-export function TotalCustomers({ diff, trend, sx, value }: TotalCustomersProps): React.JSX.Element {
+export function TotalCustomers({ diff, trend, sx }: TotalCustomersProps): React.JSX.Element {
   const TrendIcon = trend === 'up' ? ArrowUpIcon : ArrowDownIcon;
   const trendColor = trend === 'up' ? 'var(--mui-palette-success-main)' : 'var(--mui-palette-error-main)';
+  const { loading, customer } = useAppSelector((state) => state.customers);
+  const dispatch = useAppDispatch();
 
+  const fetchCustomer = React.useCallback(async () => {
+    try {
+      await dispatch(fetchCustomers()).unwrap();
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    fetchCustomer();
+  }, [fetchCustomer]);
+
+  if (loading) return <p>Loading...</p>;
   return (
     <Card sx={sx}>
       <CardContent>
@@ -29,7 +48,7 @@ export function TotalCustomers({ diff, trend, sx, value }: TotalCustomersProps):
               <Typography color="text.secondary" variant="overline">
                 Total Customers
               </Typography>
-              <Typography variant="h4">{value}</Typography>
+              <Typography variant="h4">{customer?.length}</Typography>
             </Stack>
             <Avatar sx={{ backgroundColor: 'var(--mui-palette-success-main)', height: '56px', width: '56px' }}>
               <UsersIcon fontSize="var(--icon-fontSize-lg)" />

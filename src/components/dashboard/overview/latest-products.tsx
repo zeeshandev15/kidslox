@@ -1,5 +1,9 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { fetchProducts } from '@/redux/api/productApi';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -24,23 +28,41 @@ export interface Product {
 }
 
 export interface LatestProductsProps {
-  products?: Product[];
   sx?: SxProps;
   title?: string;
   autoset?: SxProps;
 }
 
-export function LatestProducts({ products = [], sx, title, autoset }: LatestProductsProps): React.JSX.Element {
+export function LatestProducts({ sx, title, autoset }: LatestProductsProps): React.JSX.Element {
+  const { loading, products } = useAppSelector((state) => state.products);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const dispatch = useAppDispatch();
+
+  const fetchProduct = async (): Promise<void> => {
+    try {
+      await dispatch(fetchProducts()).unwrap();
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchProduct();
+  }, []);
   return (
     <Card sx={sx}>
       <CardHeader title="Latest products" />
       <Divider />
       <List sx={autoset}>
-        {products.map((product, index) => (
-          <ListItem divider={index < products.length - 1} key={product.id}>
+        {products?.map((product, index) => (
+          <ListItem divider={index < products.length - 1} key={product._id}>
             <ListItemAvatar>
               {product.image ? (
-                <Box component="img" src={product.image} sx={{ borderRadius: 1, height: '48px', width: '48px' }} />
+                <Box
+                  component="img"
+                  src={product.image ? `${API_URL}/uploads/${product.image}` : undefined}
+                  sx={{ borderRadius: 1, height: '48px', width: '48px' }}
+                />
               ) : (
                 <Box
                   sx={{
@@ -53,7 +75,7 @@ export function LatestProducts({ products = [], sx, title, autoset }: LatestProd
               )}
             </ListItemAvatar>
             <ListItemText
-              primary={product.name}
+              primary={product.title}
               primaryTypographyProps={{ variant: 'subtitle1' }}
               secondary={`Updated ${dayjs(product.updatedAt).format('MMM D, YYYY')}`}
               secondaryTypographyProps={{ variant: 'body2' }}

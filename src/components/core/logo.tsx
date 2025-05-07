@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Box, NoSsr, useColorScheme } from '@mui/material';
+import { Box, NoSsr, Typography, useColorScheme } from '@mui/material';
 
 const HEIGHT = 60;
 const WIDTH = 60;
@@ -24,7 +24,17 @@ export function Logo({ color = 'dark', emblem, height = HEIGHT, width = WIDTH }:
     url = '/assets/logo.svg';
   }
 
-  return <Box alt="logo" component="img" height={height} src={url} width={width} />;
+  return (
+    <Box
+      component="img"
+      src="/assets/logo.png" // Replace with your actual image path
+      alt="RFID Nexus Logo"
+      sx={{
+        height: 120, // Adjust height as needed
+        width: 'auto',
+      }}
+    />
+  );
 }
 
 export interface DynamicLogoProps {
