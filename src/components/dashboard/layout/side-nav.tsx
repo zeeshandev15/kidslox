@@ -35,8 +35,8 @@ export function SideNav(): React.JSX.Element {
         '--NavItem-icon-color': 'var(--mui-palette-neutral-400)',
         '--NavItem-icon-active-color': 'var(--mui-palette-primary-contrastText)',
         '--NavItem-icon-disabled-color': 'var(--mui-palette-neutral-600)',
-        bgcolor: 'var(--SideNav-background)',
-        color: 'var(--SideNav-color)',
+        bgcolor: '#15B79F',
+        color: 'white',
         display: { xs: 'none', lg: 'flex' },
         flexDirection: 'column',
         height: '100%',
@@ -54,7 +54,7 @@ export function SideNav(): React.JSX.Element {
         <Box
           sx={{
             alignItems: 'center',
-            backgroundColor: 'var(--mui-palette-neutral-950)',
+            backgroundColor: 'orange',
             border: '1px solid var(--mui-palette-neutral-700)',
             borderRadius: '12px',
             cursor: 'pointer',
@@ -64,10 +64,10 @@ export function SideNav(): React.JSX.Element {
         >
           <Box sx={{ flex: '1 1 auto' }}>
             <Typography color="var(--mui-palette-neutral-400)" variant="body2">
-              Workspace
+              Child Protection
             </Typography>
             <Typography color="inherit" variant="subtitle1">
-              MultiMart
+              KIDSLOX
             </Typography>
           </Box>
           <CaretUpDownIcon />
@@ -163,7 +163,7 @@ function NavItem({ disabled, external, href, icon, matcher, pathname, title }: N
             color: 'var(--NavItem-disabled-color)',
             cursor: 'not-allowed',
           }),
-          ...(active && { bgcolor: 'var(--NavItem-active-background)', color: 'var(--NavItem-active-color)' }),
+          ...(active && { bgcolor: 'orange', color: 'white' }),
         }}
       >
         <Box sx={{ alignItems: 'center', display: 'flex', justifyContent: 'center', flex: '0 0 auto' }}>

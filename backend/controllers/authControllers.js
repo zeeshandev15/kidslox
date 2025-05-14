@@ -1,18 +1,20 @@
-import Twilio from "twilio";
-import { createError } from "../app/middlewares/error.js";
-import { User } from "../models/userModel.js";
-import { sendToken } from "../utils/sendToken.js";
-import { catchAsyncError } from "../app/middlewares/catchAsyncError.js";
-import { sendEmail } from "../utils/sendEmail.js";
-import crypto from "crypto";
+import crypto from 'crypto';
+
+import Twilio from 'twilio';
+
+import { catchAsyncError } from '../app/middlewares/catchAsyncError.js';
+import { createError } from '../app/middlewares/error.js';
+import { User } from '../models/userModel.js';
+import { sendEmail } from '../utils/sendEmail.js';
+import { sendToken } from '../utils/sendToken.js';
 
 const client = Twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 export const register = catchAsyncError(async (req, res, next) => {
   try {
-    const { name, email, phone, password, verificationMethod } = req.body;
+    const { name, email, phone, password, role, verificationMethod } = req.body;
 
-    if (!name || !email || !phone || !password || !verificationMethod) {
-      return next(createError("All fields are required.", 400));
+    if (!name || !email || !phone || !password || !verificationMethod || !role) {
+      return next(createError('All fields are required.', 400));
     }
 
     function validatePhoneNumber(phone) {
@@ -21,7 +23,7 @@ export const register = catchAsyncError(async (req, res, next) => {
     }
 
     if (!validatePhoneNumber(phone)) {
-      return next(createError("Invalid phone number.", 400));
+      return next(createError('Invalid phone number.', 400));
     }
 
     const existingUser = await User.findOne({
@@ -32,7 +34,7 @@ export const register = catchAsyncError(async (req, res, next) => {
     });
 
     if (existingUser) {
-      return next(createError("Phone or Email is already used.", 400));
+      return next(createError('Phone or Email is already used.', 400));
     }
 
     const registerationAttemptsByUser = await User.find({
@@ -44,29 +46,20 @@ export const register = catchAsyncError(async (req, res, next) => {
 
     if (registerationAttemptsByUser.length > 3) {
       return next(
-        createError(
-          "You have exceeded the maximum number of attempts (3). Please try again after an hour.",
-          400
-        )
+        createError('You have exceeded the maximum number of attempts (3). Please try again after an hour.', 400)
       );
     }
 
-    const userData = { name, email, phone, password };
+    const userData = { name, email, phone, password, role };
     const user = await User.create(userData);
     if (!user) {
-      return next(createError("Failed to create user", 500));
+      return next(createError('Failed to create user', 500));
     }
 
     const verificationCode = user.generateVerificationCode();
     await user.save(); // Save the user with verification code
 
-    const { success, message } = await sendVerificationCode(
-      verificationMethod,
-      verificationCode,
-      name,
-      email,
-      phone
-    );
+    const { success, message } = await sendVerificationCode(verificationMethod, verificationCode, name, email, phone);
 
     if (!success) {
       return next(createError(message, 500));
@@ -83,27 +76,18 @@ export const register = catchAsyncError(async (req, res, next) => {
   }
 });
 
-async function sendVerificationCode(
-  verificationMethod,
-  verificationCode,
-  name,
-  email,
-  phone
-) {
+async function sendVerificationCode(verificationMethod, verificationCode, name, email, phone) {
   try {
-    if (verificationMethod === "email") {
+    if (verificationMethod === 'email') {
       const message = generateEmailTemplate(verificationCode);
-      await sendEmail({ email, subject: "Your Verification Code", message });
+      await sendEmail({ email, subject: 'Your Verification Code', message });
 
       return {
         success: true,
         message: `Verification email successfully sent to ${name}.`,
       };
-    } else if (verificationMethod === "phone") {
-      const verificationCodeWithSpace = verificationCode
-        .toString()
-        .split("")
-        .join(" ");
+    } else if (verificationMethod === 'phone') {
+      const verificationCodeWithSpace = verificationCode.toString().split('').join(' ');
 
       await client.calls.create({
         twiml: `<Response><Say>Your verification code is ${verificationCodeWithSpace}. Your verification code is ${verificationCodeWithSpace}.</Say></Response>`,
@@ -111,18 +95,18 @@ async function sendVerificationCode(
         to: phone,
       });
 
-      return { success: true, message: "OTP sent successfully via phone." };
+      return { success: true, message: 'OTP sent successfully via phone.' };
     } else {
       return {
         success: false,
-        message: "Invalid verification method.",
+        message: 'Invalid verification method.',
       };
     }
   } catch (error) {
-    console.error("Error in sendVerificationCode:", error);
+    console.error('Error in sendVerificationCode:', error);
     return {
       success: false,
-      message: "Failed to send verification code.",
+      message: 'Failed to send verification code.',
     };
   }
 }
@@ -148,155 +132,30 @@ function generateEmailTemplate(verificationCode) {
     `;
 }
 
-// export const verifyOTP = catchAsyncError(async (req, res, next) => {
-//   const { email, otp, phone } = req.body;
-
-//   function validatePhoneNumber(phone) {
-//     const phoneRegex = /^\+923\d{9}$/;
-//     return phoneRegex.test(phone);
-//   }
-
-//   if (!validatePhoneNumber(phone)) {
-//     return next(createError("Invalid phone number.", 400));
-//   }
-
-//   try {
-//     const userAllEntries = await User.find({
-//       $or: [
-//         {
-//           email,
-//           accountVerified: false,
-//         },
-//         {
-//           phone,
-//           accountVerified: false,
-//         },
-//       ],
-//     }).sort({ createdAt: -1 });
-
-//     if (!userAllEntries) {
-//       return next(createError("User not found.", 404));
-//     }
-
-//     let user;
-
-//     if (userAllEntries.length > 1) {
-//       user = userAllEntries[0];
-
-//       await User.deleteMany({
-//         _id: { $ne: user._id },
-//         $or: [
-//           { phone, accountVerified: false },
-//           { email, accountVerified: false },
-//         ],
-//       });
-//     } else {
-//       user = userAllEntries[0];
-//     }
-
-//     if (user.verificationCode !== Number(otp)) {
-//       return next(createError("Invalid OTP.", 400));
-//     }
-
-//     const currentTime = Date.now();
-
-//     const verificationCodeExpire = new Date(
-//       user.verificationCodeExpire
-//     ).getTime();
-
-//     if (currentTime > verificationCodeExpire) {
-//       return next(createError("OTP Expired.", 400));
-//     }
-
-//     user.accountVerified = true;
-//     user.verificationCode = null;
-//     user.verificationCodeExpire = null;
-
-//     await user.save({ validateModifiedOnly: true });
-
-//     sendToken(user, 200, "Account Verified.", res);
-//   } catch (error) {
-//     console.error("Error during OTP verification:", error);
-
-//     return next(createError("Internal Server Error.", 500));
-//   }
-// });
-
-// export const verifyOTP = catchAsyncError(async (req, res, next) => {
-//   const { email, phone, otp } = req.body;
-
-//   try {
-//     const userAllEntries = await User.find({
-//       $or: [
-//         {
-//           email,
-//           accountVerified: false,
-//         },
-//         {
-//           phone,
-//           accountVerified: false,
-//         },
-//       ],
-//     }).sort({ createdAt: -1 });
-
-//     if (userAllEntries.length === 0) {
-//       return next(createError("User not found.", 404));
-//     }
-
-//     let user = userAllEntries[0];
-
-//     if (user.verificationCode !== Number(otp)) {
-//       return next(createError("Invalid OTP.", 400));
-//     }
-
-//     const currentTime = Date.now();
-//     const verificationCodeExpire = new Date(
-//       user.verificationCodeExpire
-//     ).getTime();
-
-//     if (currentTime > verificationCodeExpire) {
-//       return next(createError("OTP Expired.", 400));
-//     }
-
-//     user.accountVerified = true;
-//     user.verificationCode = null;
-//     user.verificationCodeExpire = null;
-
-//     await user.save({ validateModifiedOnly: true });
-
-//     sendToken(user, 200, "Account Verified.", res);
-//   } catch (error) {
-//     console.error("Error during OTP verification:", error);
-//     return next(createError("Internal Server Error.", 500));
-//   }
-// });
-
 export const verifyOTP = catchAsyncError(async (req, res, next) => {
   const { otp } = req.body;
 
   if (!otp) {
-    return next(createError("OTP  are required.", 400));
+    return next(createError('OTP  are required.', 400));
   }
 
   try {
     const user = await User.findOne({ accountVerified: false });
-    console.log("User from DB:", user);
+    console.log('User from DB:', user);
 
     if (!user) {
-      return next(createError("User not found or already verified.", 404));
+      return next(createError('User not found or already verified.', 404));
     }
 
     if (user.verificationCode !== Number(otp)) {
-      return next(createError("Invalid OTP.", 400));
+      return next(createError('Invalid OTP.', 400));
     }
 
     const currentTime = Date.now();
-    const verificationCodeExpire = new Date(
-      user.verificationCodeExpire
-    ).getTime();
+    const verificationCodeExpire = new Date(user.verificationCodeExpire).getTime();
 
     if (currentTime > verificationCodeExpire) {
-      return next(createError("OTP expired.", 400));
+      return next(createError('OTP expired.', 400));
     }
 
     user.accountVerified = true;
@@ -305,43 +164,41 @@ export const verifyOTP = catchAsyncError(async (req, res, next) => {
 
     await user.save({ validateModifiedOnly: true });
 
-    sendToken(user, 200, "Account verified successfully.", res);
+    sendToken(user, 200, 'Account verified successfully.', res);
   } catch (error) {
-    console.error("Error during OTP verification:", error);
-    return next(createError("Internal Server Error.", 500));
+    console.error('Error during OTP verification:', error);
+    return next(createError('Internal Server Error.', 500));
   }
 });
 
 export const login = catchAsyncError(async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return next(createError("Email and password are required.", 400));
+    return next(createError('Email and password are required.', 400));
   }
-  const user = await User.findOne({ email, accountVerified: true }).select(
-    "+password"
-  );
+  const user = await User.findOne({ email, accountVerified: true }).select('+password');
 
   if (!user) {
-    return next(createError("Invalid email or password.", 400));
+    return next(createError('Invalid email or password.', 400));
   }
 
   const isPasswordMatched = await user.comparePassword(password);
   if (!isPasswordMatched) {
-    return next(createError("Invalid email or password.", 400));
+    return next(createError('Invalid email or password.', 400));
   }
-  sendToken(user, 200, "User logged in successfully.", res);
+  sendToken(user, 200, 'User logged in successfully.', res);
 });
 
 export const logout = catchAsyncError(async (req, res, next) => {
   res
     .status(200)
-    .cookie("token", "", {
+    .cookie('token', '', {
       expires: new Date(Date.now()),
       httpOnly: true,
     })
     .json({
       success: true,
-      message: "Logged out successfully.",
+      message: 'Logged out successfully.',
     });
 });
 
@@ -359,7 +216,7 @@ export const forgetPassowrd = catchAsyncError(async (req, res, next) => {
     accountVerified: true,
   });
   if (!user) {
-    return next(createError("User not found.", 404));
+    return next(createError('User not found.', 404));
   }
   const resetToken = user.generateResetPasswordToken();
   await user.save({ validateBeforeSave: false });
@@ -368,7 +225,7 @@ export const forgetPassowrd = catchAsyncError(async (req, res, next) => {
   try {
     sendEmail({
       email: user.email,
-      subject: "MERN AUTHENTICATION APP RESET PASSWORD",
+      subject: 'MERN AUTHENTICATION APP RESET PASSWORD',
       message,
     });
     res.status(200).json({
@@ -379,35 +236,26 @@ export const forgetPassowrd = catchAsyncError(async (req, res, next) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save({ validateBeforeSave: false });
-    return next(
-      createError(
-        error.message ? error.message : "cannot send reset password token"
-      )
-    );
+    return next(createError(error.message ? error.message : 'cannot send reset password token'));
   }
 });
 
 export const resetPassword = catchAsyncError(async (req, res, next) => {
   const { token, password, confirmPassword } = req.body;
 
-  const resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+  const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
   const user = await User.findOne({
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },
   });
-  console.log("🚀 ~ resetPassword ~ User:", User);
+  console.log('🚀 ~ resetPassword ~ User:', User);
 
   if (!user) {
-    return next(
-      createError("Reset password token is invalid or has been expired.", 400)
-    );
+    return next(createError('Reset password token is invalid or has been expired.', 400));
   }
 
   if (password !== confirmPassword) {
-    return next(createError("Password & confirm password do not match.", 400));
+    return next(createError('Password & confirm password do not match.', 400));
   }
 
   user.password = password;
@@ -415,5 +263,5 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   user.resetPasswordExpire = undefined;
   await user.save();
 
-  sendToken(user, 200, "Reset Password Successfully.", res);
+  sendToken(user, 200, 'Reset Password Successfully.', res);
 });

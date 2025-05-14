@@ -10,7 +10,7 @@ import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { ListBullets as ListBulletsIcon } from '@phosphor-icons/react/dist/ssr/ListBullets';
 
-import { Order } from './latest-orders';
+import { Order } from './latest-stocks';
 
 export interface TasksProgressProps {
   sx?: SxProps;
@@ -23,7 +23,7 @@ export function TasksProgress({ value, sx }: TasksProgressProps): React.JSX.Elem
   React.useEffect(() => {
     const submitOrder = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/checkout');
+        const res = await fetch('http://localhost:8000 /api/checkout');
         const data = await res.json();
 
         let updatedata = [...data.orders];

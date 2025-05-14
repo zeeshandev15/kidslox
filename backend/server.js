@@ -10,9 +10,8 @@ import { config } from 'dotenv';
 import express from 'express';
 
 import authRoutes from './app/api/auth/authRoutes.js';
-import customerRoutes from './app/api/customers/customerRoutes.js';
-import orderRoutes from './app/api/order/orderRoutes.js';
 import productRoutes from './app/api/products/productRoutes.js';
+import stockRoutes from './app/api/stocks/stockRoutes.js';
 import connectDB from './app/config/db.js';
 import { errorMiddleware } from './app/middlewares/error.js';
 import { removeUnverifiedAccounts } from './automation/removeUnverifiedAccounts.js';
@@ -35,7 +34,7 @@ app.prepare().then(async () => {
 
   server.use(
     cors({
-      origin: ['http://localhost:3000', 'http://localhost:3001', 'https://multimart-supplier.vercel.app'],
+      origin: ['http://localhost:3000', 'http://localhost:3001'],
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       credentials: true,
     })
@@ -47,8 +46,7 @@ app.prepare().then(async () => {
 
   server.use('/api/auth', authRoutes);
   server.use('/api/products', productRoutes);
-  server.use('/api/customers', customerRoutes);
-  server.use('/api/checkout', orderRoutes);
+  server.use('/api/stock', stockRoutes);
 
   server.get('/api/custom', (req, res) => {
     res.json({ message: 'This is a custom route!' });

@@ -42,7 +42,7 @@ export function ResetPasswordForm(): React.JSX.Element {
   const onSubmit = React.useCallback(
     async (values: Values): Promise<void> => {
       try {
-        const response = await fetch(`http://localhost:8000/api/auth/password/forgot`, {
+        const response = await fetch(`http://localhost:8000 /api/auth/password/forgot`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

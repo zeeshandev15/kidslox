@@ -36,15 +36,32 @@ declare module '@mui/material/styles/createPalette' {
   }
 }
 
-export function createTheme(): Theme {
-  const theme = extendTheme({
-    breakpoints: { values: { xs: 0, sm: 600, md: 900, lg: 1200, xl: 1440 } },
-    components,
-    colorSchemes,
-    shadows,
-    shape: { borderRadius: 8 },
-    typography,
+export const createTheme = () => {
+  return extendTheme({
+    colorSchemes: {
+      light: {
+        palette: {
+          primary: {
+            main: '#15B79F',
+          },
+          secondary: {
+            main: '#635BFF',
+          },
+        },
+      },
+    },
   });
+};
 
-  return theme;
-}
+// export function createTheme(): Theme {
+//   const theme = extendTheme({
+//     breakpoints: { values: { xs: 0, sm: 600, md: 900, lg: 1200, xl: 1440 } },
+//     components,
+//     colorSchemes,
+//     shadows,
+//     shape: { borderRadius: 8 },
+//     typography,
+//   });
+
+//   return theme;
+// }

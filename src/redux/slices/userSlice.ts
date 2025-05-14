@@ -12,6 +12,7 @@ interface User {
   confirmPassword: string;
   accountVerified: boolean;
   phone: string;
+  role: string;
 }
 
 interface AuthResponse {

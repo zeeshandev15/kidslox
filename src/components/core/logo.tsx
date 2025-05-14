@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Box, NoSsr, Typography, useColorScheme } from '@mui/material';
+import { Box, NoSsr, useColorScheme } from '@mui/material';
 
 const HEIGHT = 60;
 const WIDTH = 60;
@@ -27,10 +27,10 @@ export function Logo({ color = 'dark', emblem, height = HEIGHT, width = WIDTH }:
   return (
     <Box
       component="img"
-      src="/assets/logo.png" // Replace with your actual image path
-      alt="RFID Nexus Logo"
+      src="/assets/logo.png"
+      alt="KIDSLOX"
       sx={{
-        height: 120, // Adjust height as needed
+        height: 180,
         width: 'auto',
       }}
     />

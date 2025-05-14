@@ -2,14 +2,12 @@
 
 import { combineReducers } from '@reduxjs/toolkit';
 
-import customersReducer from './slices/customerSlice';
-import productReducer from './slices/productSlice';
+import stocksReducer from './slices/stockSlice';
 import authReducer from './slices/userSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  products: productReducer,
-  customers: customersReducer,
+  stocks: stocksReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

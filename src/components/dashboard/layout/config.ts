@@ -3,10 +3,7 @@ import { paths } from '@/paths';
 
 export const navItems = [
   { key: 'overview', title: 'Overview', href: paths.dashboard.overview, icon: 'chart-pie' },
-  { key: 'customers', title: 'Customers', href: paths.dashboard.customers, icon: 'users-three' },
-  { key: 'products', title: 'Products', href: paths.dashboard.products, icon: 'package' },
-  { key: 'orders', title: 'Orders', href: paths.dashboard.orders, icon: 'shopping-cart' },
-  { key: 'pricing', title: 'Pricing & Discounts', href: paths.dashboard.pricing, icon: 'tag' },
+  { key: 'history', title: 'History', href: paths.dashboard.history, icon: 'users-three' },
   {
     key: 'communication',
     title: 'Communication & Support',

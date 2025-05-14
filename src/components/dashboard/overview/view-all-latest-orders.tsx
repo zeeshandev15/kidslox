@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LatestOrders } from './latest-orders';
+import { LatestOrders } from './latest-stocks';
 
 const ViewAllLatestOrders = () => {
   return (

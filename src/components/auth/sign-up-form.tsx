@@ -34,6 +34,7 @@ const schema = zod.object({
   password: zod.string().min(6, { message: 'Password should be at least 6 characters' }),
   phone: zod.string().min(6, { message: 'Phone Number is required' }),
   verificationMethod: zod.boolean().refine((value) => value, 'You must accept the terms and conditions'),
+  role: zod.enum(['parent', 'child'], { required_error: 'Role is required' }),
 });
 
 type Values = zod.infer<typeof schema>;
@@ -44,6 +45,7 @@ const defaultValues = {
   phone: '',
   password: '',
   verificationMethod: false,
+  role: 'child',
 } satisfies Values;
 
 export function SignUpForm(): React.JSX.Element {
@@ -63,6 +65,7 @@ export function SignUpForm(): React.JSX.Element {
         ...values,
         phone: `+${values.phone}`,
         verificationMethod: values.verificationMethod === true ? 'email' : 'phone',
+        role: values.role,
       };
 
       try {
@@ -183,6 +186,29 @@ export function SignUpForm(): React.JSX.Element {
             )}
           />
           {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
+          <Controller
+            control={control}
+            name="role"
+            render={({ field }) => (
+              <FormControl error={Boolean(errors.role)}>
+                <FormLabel>Role</FormLabel>
+                <Stack direction="row" spacing={2}>
+                  <FormControlLabel
+                    value="parent"
+                    control={<Checkbox checked={field.value === 'parent'} onChange={() => field.onChange('parent')} />}
+                    label="Parent"
+                  />
+                  <FormControlLabel
+                    value="child"
+                    control={<Checkbox checked={field.value === 'child'} onChange={() => field.onChange('child')} />}
+                    label="Child"
+                  />
+                </Stack>
+                {errors.role ? <FormHelperText>{errors.role.message}</FormHelperText> : null}
+              </FormControl>
+            )}
+          />
+
           <Button type="submit" variant="contained">
             Sign up
           </Button>

@@ -24,6 +24,8 @@ import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
 
+import Loader from '../loader/Loader';
+
 const schema = zod.object({
   email: zod.string().min(1, { message: 'Email is required' }).email(),
   password: zod.string().min(1, { message: 'Password is required' }),
@@ -40,7 +42,6 @@ export function SignInForm(): React.JSX.Element {
 
   const [isPending, setIsPending] = React.useState<boolean>(false);
   const { loading, currentUser, error } = useAppSelector((state: RootState) => state.auth);
-  console.log('🚀 ~ SignInForm ~ auth:', currentUser);
   const dispatch = useAppDispatch();
   const {
     control,
@@ -54,10 +55,10 @@ export function SignInForm(): React.JSX.Element {
       try {
         await dispatch(loginUser(values));
         reset();
-        if (currentUser?.email === values.email) {
+        if (currentUser?.email === values.email && currentUser?.role === 'parent') {
           router.push(paths.dashboard.overview);
         } else {
-          router.push(paths.auth.signIn);
+          router.push('/pricingplans');
         }
       } catch (error: any) {
         console.error('Error during sign In:', error);
@@ -67,18 +68,12 @@ export function SignInForm(): React.JSX.Element {
     [dispatch, reset, router]
   );
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loader />;
 
   return (
     <Stack spacing={4}>
       <Stack spacing={1}>
-        <Typography variant="h4">Sign in</Typography>
-        <Typography color="text.secondary" variant="body2">
-          Don&apos;t have an account?{' '}
-          <Link component={RouterLink} href={paths.auth.signUp} underline="hover" variant="subtitle2">
-            Sign up
-          </Link>
-        </Typography>
+        <Typography variant="h5">Sign in</Typography>
       </Stack>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
@@ -133,8 +128,14 @@ export function SignInForm(): React.JSX.Element {
             <Link component={RouterLink} href={paths.auth.resetPassword} variant="subtitle2">
               Forgot password?
             </Link>
+            <Typography color="text.secondary" variant="body2">
+              Don&apos;t have an account?{' '}
+              <Link component={RouterLink} href={paths.auth.signUp} underline="hover" variant="subtitle2">
+                Sign up
+              </Link>
+            </Typography>
           </div>
-          {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
+          {errors.root ? <Alert color="error">{errors?.root.message}</Alert> : null}
           <Button disabled={isPending} type="submit" variant="contained">
             Sign in
           </Button>

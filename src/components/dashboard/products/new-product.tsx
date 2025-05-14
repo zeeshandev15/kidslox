@@ -62,7 +62,7 @@ export default function AddItemForm({ fetchProduct, editProduct, setEditProduct 
       setValue('price', String(editProduct.price) || '');
       setValue('updatedAt', editProduct.updatedAt?.split('T')[0] || new Date().toISOString().split('T')[0]);
       if (editProduct.image) {
-        setPreview(`http://localhost:8000/${editProduct.image}`);
+        setPreview(`http://localhost:8000 /${editProduct.image}`);
       }
     }
   }, [editProduct, setValue]);
@@ -104,7 +104,7 @@ export default function AddItemForm({ fetchProduct, editProduct, setEditProduct 
           fetchProduct();
 
           if (actionResult.payload.product?.image) {
-            setPreview(`http://localhost:8000/${actionResult.payload.product.image}`);
+            setPreview(`http://localhost:8000 /${actionResult.payload.product.image}`);
           }
 
           reset({
