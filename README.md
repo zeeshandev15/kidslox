@@ -5,9 +5,7 @@
 ## Pages
 
 - [Overview](https://material-kit-react.devias.io)
-- [Customers](https://material-kit-react.devias.io/dashboard/customers)
-- [Products](https://material-kit-react.devias.io/dashboard/products)
-- [Orders](https://material-kit-react.devias.io/dashboard/orders)
+- [History](https://material-kit-react.devias.io/dashboard/stocks)
 - [Pricing & Discount](https://material-kit-react.devias.io/dashboard/pricing)
 - [Communication & Support](https://material-kit-react.devias.io/dashboard/communication)
 - [Settings](https://material-kit-react.devias.io/dashboard/settings)
