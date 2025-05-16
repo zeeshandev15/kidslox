@@ -1,8 +1,7 @@
    <a href="https://youtu.be/lEflo_sc82g?feature=shared" target="_blank">
       <img src="https://github.com/zeeshandev15/kidslox/blob/master/kidslox%20pic.png" alt="Project Banner">
     </a>
-![license](https://img.shields.io/badge/license-MIT-blue.svg)
-
+    <br/>
 > Free React Admin Dashboard made with [MUI's](https://mui.com) components, [React](https://reactjs.org) and of course [Next.js](https://github.com/vercel/next.js) to boost your app development process!
 
 ## Pages
