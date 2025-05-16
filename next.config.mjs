@@ -6,7 +6,7 @@ const config = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  reactStrictMode: 'false',
+  reactStrictMode: true,
 };
 
 export default config;
